@@ -1,0 +1,31 @@
+{
+  "name": "node-sqlserver-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Marieglahn/node-sql.git"
+  },
+  "author": "Marie Glahn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Marieglahn/node-sql/issues"
+  },
+  "homepage": "https://github.com/Marieglahn/node-sql",
+  "dependencies": {
+    "express": "^4.13.4",
+    "tedious": "^1.13.2"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-jscs": "^3.0.2",
+    "gulp-jshint": "^2.0.0",
+    "gulp-nodemon": "^2.0.6",
+    "jshint": "^2.9.1",
+    "jshint-stylish": "^2.1.0"
+  }
+}
