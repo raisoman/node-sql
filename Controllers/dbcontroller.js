@@ -34,6 +34,16 @@ function getData(query, callback) {
     });
 }
 
+var buildQuery = function (table, cols, where) {
+    if (where !== undefined &&  where.length !== 0) {
+        console.log(typeof where + ' is where');
+        console.log(where[0]);
+    }
+//    console.log(where + ' is where');
+    var query = 'SELECT top 50 ' + cols + ' FROM ' + table + ';';
+    return query;
+};
+
 var dbController = function () {
     var getAll = function (req, res) {
         var query = 'SELECT top 2 * FROM batbiview;';
@@ -51,10 +61,12 @@ var dbController = function () {
     var getTable = function(req, res) {
         var table = req.params.table;
         var cols = req.query.cols;
+        var where = req.query.where;
         if (cols === undefined || cols.length === 0) {
             res.send('Please specify column names');
         } else {
-            var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + ';';
+            var query = buildQuery(table, cols, where);
+            //var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + ';';
             console.log(query);
             var data = getData(query, function callback(err, data) {
                 if (err) {
