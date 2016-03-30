@@ -14,46 +14,31 @@ var connection;
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 
-function connect() {
-    console.log('connect()');
+function connect(callback) {
     connection = new Connection(config);
     connection.on('connect', function (err) {
-        // If no error, then good to proceed.
-        console.log('Connected');
-        executeStatement();
+        if (err) {
+            console.log('error ' + err);
+            return 'failed connection';
+        } else {
+            console.log('Connected');
+            var request = new Request('SELECT top 2 LOTDMEASUREMENT, CsHETD FROM batbiview;', function (err, rowCount, rows) {
+                if (err) {
+                    callback('no data could be fetcced');
+                } else {
+                    callback(rows);
+                }
+            });
+            connection.execSql(request);
+        }
     });
-}
-
-function executeStatement() {
-    var request = new Request('SELECT c.CustomerID, c.CompanyName,COUNT(soh.SalesOrderID) AS OrderCount FROM SalesLT.Customer AS c LEFT OUTER JOIN SalesLT.SalesOrderHeader AS soh ON c.CustomerID = soh.CustomerID GROUP BY c.CustomerID, c.CompanyName ORDER BY OrderCount DESC;',
-        function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
-    var result = '';
-    request.on('row', function (columns) {
-        columns.forEach(function (column) {
-            if (column.value === null) {
-                console.log('NULL');
-            } else {
-                result += column.value + ' ';
-            }
-        });
-        console.log(result);
-        result = '';
-    });
-
-    request.on('done', function (rowCount, more) {
-        console.log(rowCount + ' rows returned');
-    });
-    connection.execSql(request);
 }
 
 var dbController = function () {
     var get = function (req, res) {
-        connect();
-        res.send('in get');
+        var rows = connect(function callback(rows) {
+                res.json(rows);
+            });
     };
 
     return {

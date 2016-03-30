@@ -5,6 +5,6 @@ var express = require('express'),
 
 app.use('/api', apiRouter);
 
-app.listen(port, function(err) {
+app.listen(port, function (err) {
     console.log('running server on port ' + port);
 });
