@@ -14,19 +14,19 @@ var connection;
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 
-function getData(callback) {
+function getData(query, callback) {
     connection = new Connection(config);
     connection.on('connect', function (err) {
         if (err) {
-            callback('db err');
+            callback(err,'db err');
         } else {
-            var request = new Request('SELECT top 2 * FROM batbiview;', function (err, rowCount, rows) {
+            var request = new Request(query, function (err, rowCount, rows) {
                 if (err) {
-                    callback('db err');
+                    callback(err,'db err');
                 } else if (rowCount === 0) {
-                    callback('no data');
+                    callback(null,'no data');
                 } else {
-                    callback(rows);
+                    callback(null,rows);
                 }
             });
             connection.execSql(request);
@@ -35,8 +35,9 @@ function getData(callback) {
 }
 
 var dbController = function () {
-    var get = function (req, res) {
-        var data = getData(function callback(data) {
+    var getAll = function (req, res) {
+        var query = 'SELECT top 2 * FROM batbiview;';
+        var data = getData(query, function callback(err, data) {
             if (data === 'db err') {
                 res.status(503).json('Database error');
             } else if (data === 'no data') {
@@ -47,8 +48,32 @@ var dbController = function () {
         });
     };
 
+    var getTable = function(req, res) {
+        var table = req.params.table;
+        var cols = req.query.cols;
+        if (cols === undefined || cols.length === 0) {
+            res.send('Please specify column names');
+        } else {
+            var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + ';';
+            console.log(query);
+            var data = getData(query, function callback(err, data) {
+                if (err) {
+                    console.log(err);
+                }
+                if (data === 'db err') {
+                    res.status(503).json('Database error');
+                } else if (data === 'no data') {
+                    res.send('No data was found');
+                } else {
+                    res.json(data);
+                }
+            });
+        }
+    };
+
     return {
-        get: get
+        getAll: getAll,
+        getTable: getTable
     };
 };
 
