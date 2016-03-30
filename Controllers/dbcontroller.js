@@ -14,17 +14,17 @@ var connection;
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 
-function connect(callback) {
+function getData(callback) {
     connection = new Connection(config);
     connection.on('connect', function (err) {
         if (err) {
-            console.log('error ' + err);
-            return 'failed connection';
+            callback('db err');
         } else {
-            console.log('Connected');
-            var request = new Request('SELECT top 2 LOTDMEASUREMENT, CsHETD FROM batbiview;', function (err, rowCount, rows) {
+            var request = new Request('SELECT top 2 * FROM batbiview;', function (err, rowCount, rows) {
                 if (err) {
-                    callback('no data could be fetcced');
+                    callback('db err');
+                } else if (rowCount === 0) {
+                    callback('no data');
                 } else {
                     callback(rows);
                 }
@@ -36,9 +36,15 @@ function connect(callback) {
 
 var dbController = function () {
     var get = function (req, res) {
-        var rows = connect(function callback(rows) {
-                res.json(rows);
-            });
+        var data = getData(function callback(data) {
+            if (data === 'db err') {
+                res.status(503).json('Database error');
+            } else if (data === 'no data') {
+                res.send('No data was found');
+            } else {
+                res.json(data);
+            }
+        });
     };
 
     return {
