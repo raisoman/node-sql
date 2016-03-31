@@ -7,6 +7,7 @@ var routes = function () {
         .get(dbController.getAll);
 
     //Example: http://localhost:5000/api/batbiview?cols=CsSDISCHARGE,CblSVESSEL
+    //Example with where: http://localhost:5000/api/batbiview?cols=CsSDISCHARGE,CblSVESSEL&where=CsSDISCHARGE:'USSAV'&where=CBlSVESSEL:'YM OAKLAND'
     apiRouter.route('/:table')
         .get(dbController.getTable);
 

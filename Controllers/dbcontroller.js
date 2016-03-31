@@ -1,12 +1,15 @@
 var Connection = require('tedious').Connection;
 var config = {
-    userName: 'yourusername',
-    password: 'yourpassword',
-    server: 'yourserver.database.windows.net',
-    // When you connect to Azure SQL Database, you need these next options.
+    userName: '...',
+    password: '...',
+    server: '',
     options: {
+        port: '',
         encrypt: true,
-        database: 'AdventureWorks'
+        database: '',
+        requestTimeout: 300000,
+        rowCollectionOnRequestCompletion: true,
+        useColumnNames: true
     }
 };
 
@@ -18,15 +21,15 @@ function getData(query, callback) {
     connection = new Connection(config);
     connection.on('connect', function (err) {
         if (err) {
-            callback(err,'db err');
+            callback(err, 'db err');
         } else {
             var request = new Request(query, function (err, rowCount, rows) {
                 if (err) {
-                    callback(err,'db err');
+                    callback(err, 'db err');
                 } else if (rowCount === 0) {
-                    callback(null,'no data');
+                    callback(null, 'no data');
                 } else {
-                    callback(null,rows);
+                    callback(null, rows);
                 }
             });
             connection.execSql(request);
@@ -35,18 +38,30 @@ function getData(query, callback) {
 }
 
 var buildQuery = function (table, cols, where) {
-    if (where !== undefined &&  where.length !== 0) {
-        console.log(typeof where + ' is where');
-        console.log(where[0]);
+    var whereClause = '';
+    if (where !== undefined) {
+        var whereLength = where.length;
+        if (whereLength !== 0) {
+            whereClause = ' WHERE ';
+            for (var i = 0; where.length > i; i++) {
+                var converted = where[i].replace(':', '=');
+                if (i === whereLength - 1) {
+                    whereClause += ' AND ' + converted;
+                } else if (i === whereLength - 2) {
+                    whereClause += converted;
+                } else {
+                    whereClause += converted + ', ';
+                }
+            }
+        }
     }
-//    console.log(where + ' is where');
-    var query = 'SELECT top 50 ' + cols + ' FROM ' + table + ';';
+    var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + whereClause + ';';
     return query;
 };
 
 var dbController = function () {
     var getAll = function (req, res) {
-        var query = 'SELECT top 2 * FROM batbiview;';
+        var query = 'SELECT top 1 * FROM batbiview;';
         var data = getData(query, function callback(err, data) {
             if (data === 'db err') {
                 res.status(503).json('Database error');
@@ -58,7 +73,7 @@ var dbController = function () {
         });
     };
 
-    var getTable = function(req, res) {
+    var getTable = function (req, res) {
         var table = req.params.table;
         var cols = req.query.cols;
         var where = req.query.where;
@@ -66,8 +81,6 @@ var dbController = function () {
             res.send('Please specify column names');
         } else {
             var query = buildQuery(table, cols, where);
-            //var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + ';';
-            console.log(query);
             var data = getData(query, function callback(err, data) {
                 if (err) {
                     console.log(err);
