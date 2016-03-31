@@ -17,6 +17,7 @@ var connection;
 var Request = require('tedious').Request;
 var TYPES = require('tedious').TYPES;
 
+//Connect to db, get data, return on callback
 function getData(query, callback) {
     connection = new Connection(config);
     connection.on('connect', function (err) {
@@ -25,7 +26,7 @@ function getData(query, callback) {
         } else {
             var request = new Request(query, function (err, rowCount, rows) {
                 if (err) {
-                    callback(err, 'db err');
+                    callback(err, '');
                 } else if (rowCount === 0) {
                     callback(null, 'no data');
                 } else {
@@ -37,6 +38,7 @@ function getData(query, callback) {
     });
 }
 
+//Build query string from table, columns and where params
 var buildQuery = function (table, cols, where) {
     var whereClause = '';
     if (where !== undefined) {
@@ -55,24 +57,28 @@ var buildQuery = function (table, cols, where) {
             }
         }
     }
-    var query = 'SELECT top 50000 ' + cols + ' FROM ' + table + whereClause + ';';
+    var query = 'SELECT top 20000 ' + cols + ' FROM ' + table + whereClause + ';';
     return query;
 };
 
+//Function(s) to call from apiroutes.js:
 var dbController = function () {
+    //Generic function with predefined query:
     var getAll = function (req, res) {
-        var query = 'SELECT top 1 * FROM batbiview;';
+        var query = 'SELECT top 20000 * FROM batbiview;';
         var data = getData(query, function callback(err, data) {
-            if (data === 'db err') {
-                res.status(503).json('Database error');
+            if (err) {
+                res.status(503).send('Database error: ' + err);
             } else if (data === 'no data') {
-                res.send('No data was found');
+                res.status(204);
             } else {
                 res.json(data);
             }
         });
     };
 
+    //Example: /api/tableneme?cols=columnname1,columnname2
+    //Example with "where": /api/tableneme?cols=columnname1,columnname2&where=columnname1:'value1'&where=columnname2:'value2'
     var getTable = function (req, res) {
         var table = req.params.table;
         var cols = req.query.cols;
@@ -83,12 +89,9 @@ var dbController = function () {
             var query = buildQuery(table, cols, where);
             var data = getData(query, function callback(err, data) {
                 if (err) {
-                    console.log(err);
-                }
-                if (data === 'db err') {
-                    res.status(503).json('Database error');
+                    res.status(503).send('Database error: ' + err);
                 } else if (data === 'no data') {
-                    res.send('No data was found');
+                    res.status(204);
                 } else {
                     res.json(data);
                 }
@@ -96,6 +99,7 @@ var dbController = function () {
         }
     };
 
+    //Exposing functions to the apiroutes:
     return {
         getAll: getAll,
         getTable: getTable
